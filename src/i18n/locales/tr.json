@@ -1,0 +1,32 @@
+{
+  "appGallery": "Uygulama Galerisi",
+  "language": "Dil",
+  "languageChanged": "Dil değiştirildi",
+  "languageChangeFailed": "Dil değiştirilemedi",
+  "signOut": "Çıkış Yap",
+  "themeMode": {
+    "light": "Açık",
+    "dark": "Koyu",
+    "system": "Sistem"
+  },
+  "knowledge": {
+    "module": "Bilgi Bankası",
+    "overview": "Genel Bakış",
+    "welcomeTitle": "Knowledge UI'a hoş geldiniz",
+    "welcomeDescription": "Bu proje ortak SSO oturumu, tema ve i18n altyapısıyla gelen temiz bir başlangıç iskeletidir. Modüllerinizi src/modules altında oluşturmaya başlayabilirsiniz.",
+    "sessionTitle": "Oturum bilgisi",
+    "sessionUser": "Kullanıcı",
+    "sessionUserId": "Kullanıcı No",
+    "sessionExpiresAt": "Token geçerlilik sonu"
+  },
+  "unauthorized": {
+    "title": "Bu sayfaya erişim yetkiniz yok",
+    "description": "Görüntülemek istediğiniz alan için yetkiniz bulunmuyor. Yetki talebi için yöneticinizle iletişime geçebilirsiniz.",
+    "goToGallery": "Uygulama galerisine dön"
+  },
+  "notFound": {
+    "title": "404: Aradığınız sayfa bulunamadı",
+    "description": "Bağlantı hatalı olabilir ya da sayfa taşınmış olabilir. Menüden devam edebilirsiniz.",
+    "backHome": "Ana sayfaya dön"
+  }
+}

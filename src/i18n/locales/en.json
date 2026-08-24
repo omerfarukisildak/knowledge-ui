@@ -1,0 +1,32 @@
+{
+  "appGallery": "App Gallery",
+  "language": "Language",
+  "languageChanged": "Language changed",
+  "languageChangeFailed": "Language could not be changed",
+  "signOut": "Sign out",
+  "themeMode": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "knowledge": {
+    "module": "Knowledge Base",
+    "overview": "Overview",
+    "welcomeTitle": "Welcome to Knowledge UI",
+    "welcomeDescription": "A clean starting skeleton wired with the shared SSO session, theme and i18n setup. Start building your modules under src/modules.",
+    "sessionTitle": "Session info",
+    "sessionUser": "User",
+    "sessionUserId": "User ID",
+    "sessionExpiresAt": "Token expires at"
+  },
+  "unauthorized": {
+    "title": "You are not authorized to view this page",
+    "description": "You do not have permission for this area. Contact your administrator to request access.",
+    "goToGallery": "Back to app gallery"
+  },
+  "notFound": {
+    "title": "404: The page you are looking for isn't here",
+    "description": "The link may be broken or the page may have moved. Use the navigation to continue.",
+    "backHome": "Back to home"
+  }
+}

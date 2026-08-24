@@ -1,0 +1,67 @@
+// `export {}` keeps this file a module so the `declare module` blocks below are
+// treated as augmentations rather than ambient module declarations.
+export {};
+
+declare module '@mui/material/Chip/Chip' {
+  interface ChipPropsVariantOverrides {
+    soft: true;
+  }
+}
+
+declare module '@mui/material/Chip/chipClasses' {
+  interface ChipClasses {
+    soft: string;
+    softPrimary: string;
+    softSecondary: string;
+    softSuccess: string;
+    softInfo: string;
+    softWarning: string;
+    softError: string;
+  }
+}
+
+declare module '@mui/material/styles/createPalette' {
+  interface PaletteRange {
+    50: string;
+    100: string;
+    200: string;
+    300: string;
+    400: string;
+    500: string;
+    600: string;
+    700: string;
+    800: string;
+    900: string;
+    950: string;
+  }
+
+  interface PaletteColor {
+    activated: string;
+    hovered: string;
+    selected: string;
+  }
+
+  interface SimplePaletteColorOptions {
+    activated?: string;
+    hovered?: string;
+    selected?: string;
+  }
+
+  interface Palette {
+    neutral: PaletteRange;
+    Backdrop: { bg: string };
+    OutlinedInput: { border: string };
+  }
+
+  interface PaletteOptions {
+    neutral?: PaletteRange;
+    Backdrop?: { bg?: string };
+    OutlinedInput?: { border?: string };
+  }
+
+  interface TypeBackground {
+    level1: string;
+    level2: string;
+    level3: string;
+  }
+}

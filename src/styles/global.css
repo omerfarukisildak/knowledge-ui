@@ -1,0 +1,78 @@
+/* Remove if fonts are not used */
+@import '~@fontsource/inter/100.css';
+@import '~@fontsource/inter/200.css';
+@import '~@fontsource/inter/300.css';
+@import '~@fontsource/inter/400.css';
+@import '~@fontsource/inter/500.css';
+@import '~@fontsource/inter/600.css';
+@import '~@fontsource/inter/700.css';
+@import '~@fontsource/inter/800.css';
+@import '~@fontsource/inter/900.css';
+@import '~@fontsource/roboto-mono/300.css';
+@import '~@fontsource/roboto-mono/400.css';
+@import '~@fontsource/plus-jakarta-sans/600.css';
+@import '~@fontsource/plus-jakarta-sans/700.css';
+
+/* Variables */
+:root {
+  --fontSize-xs: 0.75rem;
+  --fontSize-sm: 0.875rem;
+  --fontSize-md: 1rem;
+  --fontSize-lg: 1.125rem;
+  --fontSize-xl: 1.25rem;
+  --fontSize-2xl: 1.5rem;
+
+  --icon-fontSize-sm: 1rem;
+  --icon-fontSize-md: 1.25rem;
+  --icon-fontSize-lg: 1.5rem;
+
+  /* Remember to keep in sync with theme breakpoints */
+  --maxWidth-xs: 0;
+  --maxWidth-sm: 600px;
+  --maxWidth-md: 900px;
+  --maxWidth-lg: 1200px;
+  --maxWidth-xl: 1440px;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--mui-palette-primary-main);
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+}
+
+/*
+ * Width-only UI zoom: shell sidebar vs main match loader sidebar vs content column.
+ */
+@media (min-width: 1200px) and (max-width: 1499px) {
+  .app .sidebar-shell,
+  .loading-nav-full .loading-nav-sidebar {
+    zoom: 0.8;
+    height: 125vh !important;
+  }
+
+  .app .shell > main.main,
+  .app .shell > .main,
+  .loading-nav-full .loading-nav-content {
+    zoom: 0.8;
+  }
+}
+
+@media (min-width: 1500px) and (max-width: 1900px) {
+  .app .sidebar-shell,
+  .loading-nav-full .loading-nav-sidebar {
+    zoom: 0.9;
+    height: 110vh !important;
+  }
+
+  .app .shell > main.main,
+  .app .shell > .main,
+  .loading-nav-full .loading-nav-content {
+    zoom: 0.9;
+  }
+}
