@@ -2,10 +2,6 @@
 
 import * as React from 'react';
 
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import Tooltip from '@mui/material/Tooltip';
-
 import { BookOpen as BookOpenIcon } from '@phosphor-icons/react/dist/ssr/BookOpen';
 import { Check as CheckIcon } from '@phosphor-icons/react/dist/ssr/Check';
 import { Clock as ClockIcon } from '@phosphor-icons/react/dist/ssr/Clock';
@@ -15,12 +11,14 @@ import { ThumbsDown as ThumbsDownIcon } from '@phosphor-icons/react/dist/ssr/Thu
 import { ThumbsUp as ThumbsUpIcon } from '@phosphor-icons/react/dist/ssr/ThumbsUp';
 import { useTranslation } from 'react-i18next';
 
-import { UserAvatar } from 'src/modules/knowledge/components/common/user-avatar';
 import type { AnswerWithFeedback, KnowledgeUser, QuestionDetail } from 'src/modules/knowledge/types';
 import { formatDateTime } from 'src/modules/knowledge/utils/format-date';
 
+import { QuestionAvatar } from './question-avatar';
+
 /**
- * Uzman cevabı kartı.
+ * Uzman cevabı kartı — prototipteki `.ds-soru-cevap-kart` bloğunun birebir
+ * Tailwind karşılığı.
  *
  * V43: Bu ekran yalnızca UZMAN cevaplarını gösterir. Dasi'nin otomatik cevabı,
  * derin araştırma çıktısı ve sonuçsuz taraması buraya hiç gelmez — onların yeri
@@ -65,6 +63,32 @@ export interface ExpertAnswerCardProps {
   onReport: () => void;
 }
 
+/** Cevap kartı aksiyonu — prototipteki `.ds-btn.sade.kucuk` (beyaz zemin). */
+function ActionButton({
+  children,
+  disabled,
+  label,
+  onClick
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+}): React.JSX.Element {
+  return (
+    <button
+      aria-label={label}
+      className="inline-flex min-h-[30px] items-center gap-1.5 rounded-[9px] border border-[#e5e5e2] bg-white px-[11px] py-1.5 text-[13px] font-medium text-[#59605a] transition hover:bg-[#f7f7f5] disabled:cursor-not-allowed disabled:opacity-50 dark:border-border dark:bg-surface dark:text-fg-muted"
+      disabled={disabled}
+      onClick={onClick}
+      title={label}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
 export function ExpertAnswerCard({
   answer,
   question,
@@ -86,107 +110,109 @@ export function ExpertAnswerCard({
   const dislikes = feedback.filter(entry => entry.value === 'red').length;
 
   return (
-    <div className="rounded-bubble border border-border bg-surface">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <UserAvatar name={name} />
-          <div>
-            <div className="flex items-center gap-1.5">
-              <strong>{name}</strong>
+    <div className="mt-3 overflow-hidden rounded-[13px] border border-[#e7e7e5] bg-white text-[13.5px] shadow-[0_2px_8px_rgba(11,16,32,0.025)] dark:border-border dark:bg-surface">
+      {/* Üst — uzman kimliği + tarih */}
+      <div className="flex min-h-[62px] flex-wrap items-center justify-between gap-3.5 border-b border-[#eeeeec] bg-[#fbfbfc] px-[15px] py-[11px] dark:border-border dark:bg-surface-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-[9px]">
+          <QuestionAvatar
+            name={name}
+            size={36}
+            userId={answer.answered_by}
+          />
+          <span className="flex min-w-0 flex-col leading-[1.2]">
+            <span className="inline-flex items-center gap-1.5">
+              <strong className="text-[12.5px] font-[650] text-[#171816] dark:text-fg">{name}</strong>
               {/* Doğrulama tiki yalnızca gerçekten verified kayıtta. */}
               {answer.verified ? (
-                <Tooltip title={t('knowledge.questions.answer.verifiedTitle')}>
-                  <span
-                    aria-label={t('knowledge.questions.answer.verifiedTitle')}
-                    className="grid place-items-center text-success-strong dark:text-success-light"
-                    role="img"
-                  >
-                    <CheckIcon
-                      size={15}
-                      weight="bold"
-                    />
-                  </span>
-                </Tooltip>
+                <span
+                  aria-label={t('knowledge.questions.answer.verifiedTitle')}
+                  className="grid h-[17px] w-[17px] shrink-0 place-items-center rounded-full bg-[#168de2] text-white shadow-[0_0_0_2px_#fbfbfc]"
+                  role="img"
+                  title={t('knowledge.questions.answer.verifiedTitle')}
+                >
+                  <CheckIcon
+                    size={11}
+                    weight="bold"
+                  />
+                </span>
               ) : null}
-            </div>
-            <small className="text-fg-muted">{title}</small>
-          </div>
+            </span>
+            <small className="mt-[3px] block text-[10.5px] text-[#979994]">{title}</small>
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-[13px] text-fg-muted">
-          <ClockIcon />
+        <span className="inline-flex shrink-0 items-center gap-1.5 text-[11.5px] text-[#979994]">
+          <ClockIcon size={13} />
           {formatDateTime(answer.created_at)}
         </span>
       </div>
 
-      <div className="px-4 py-3.5">
-        <div className="whitespace-pre-wrap">{text || t('knowledge.questions.answer.missingText')}</div>
+      {/* Gövde — cevap metni + ekler + kaynaklar */}
+      <div className="p-[15px]">
+        <div className="whitespace-pre-wrap leading-[1.6] text-[#171816] dark:text-fg">
+          {text || t('knowledge.questions.answer.missingText')}
+        </div>
 
-        {answer.masked ? <p className="mt-2 text-[13px] text-fg-muted">{t('knowledge.privacy.maskedNote')}</p> : null}
+        {answer.masked ? <p className="mt-2 text-[13px] text-[#979994]">{t('knowledge.privacy.maskedNote')}</p> : null}
 
         {(answer.attachments ?? []).length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2.5">
             {answer.attachments.map(attachment => (
-              <Chip
-                className="bg-fg-muted/10 text-fg-muted"
-                icon={<LinkSimpleIcon />}
+              <span
+                className="inline-flex items-center gap-[5px] rounded-md bg-[#eef0f6] px-2 py-[3px] text-[12.5px] text-[#626b8c]"
                 key={attachment}
-                label={attachment}
-                size="small"
-              />
+              >
+                <LinkSimpleIcon size={13} />
+                {attachment}
+              </span>
             ))}
           </div>
         ) : null}
 
-        {/* Uzmanın cevabında gösterdiği Bilgi Bankası kayıtları. Bilgi Bankası
-            ekranı henüz taşınmadı, o yüzden kimlik düz text olarak duruyor. */}
+        {/* Uzmanın cevabında gösterdiği Bilgi Bankası kayıtları. */}
         {(answer.references ?? []).length ? (
-          <div className="mt-3 border-t border-border pt-3">
-            <p className="mb-1.5 text-[13px] text-fg-muted">{t('knowledge.questions.answer.sources')}</p>
-            <div className="flex flex-col gap-1.5">
-              {answer.references.map(reference => (
-                <span
-                  className="flex items-center gap-2 text-[13.5px]"
-                  key={reference}
-                >
-                  <BookOpenIcon />
-                  {reference}
-                </span>
-              ))}
-            </div>
+          <div className="mt-3 flex flex-col gap-2 border-t border-[#eeeeec] pt-3 dark:border-border">
+            {answer.references.map(reference => (
+              <span
+                className="flex items-center gap-[9px] text-[13.5px] text-[#171816] dark:text-fg"
+                key={reference}
+              >
+                <BookOpenIcon
+                  className="shrink-0 text-[#8c8e89]"
+                  size={16}
+                />
+                {reference}
+              </span>
+            ))}
           </div>
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-2 border-t border-border px-4 py-2.5">
-        <Button
-          aria-label={t('knowledge.questions.answer.like')}
-          className="min-w-0 normal-case text-fg-muted"
+      {/* Aksiyonlar */}
+      <div className="flex flex-wrap gap-2 border-t border-[#eeeeec] bg-[#fbfbfc] px-3.5 py-2.5 dark:border-border dark:bg-surface-1">
+        <ActionButton
           disabled={disabled}
+          label={t('knowledge.questions.answer.like')}
           onClick={() => onFeedback('onay')}
-          size="small"
-          startIcon={<ThumbsUpIcon />}
         >
+          <ThumbsUpIcon size={15} />
           {likes || ''}
-        </Button>
-        <Button
-          aria-label={t('knowledge.questions.answer.dislike')}
-          className="min-w-0 normal-case text-fg-muted"
+        </ActionButton>
+        <ActionButton
           disabled={disabled}
+          label={t('knowledge.questions.answer.dislike')}
           onClick={() => onFeedback('red')}
-          size="small"
-          startIcon={<ThumbsDownIcon />}
         >
+          <ThumbsDownIcon size={15} />
           {dislikes || ''}
-        </Button>
-        <Button
-          className="normal-case text-fg-muted"
+        </ActionButton>
+        <ActionButton
           disabled={disabled}
+          label={t('knowledge.questions.answer.report')}
           onClick={onReport}
-          size="small"
-          startIcon={<FlagIcon />}
         >
+          <FlagIcon size={15} />
           {t('knowledge.questions.answer.report')}
-        </Button>
+        </ActionButton>
       </div>
     </div>
   );

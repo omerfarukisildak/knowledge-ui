@@ -3,19 +3,11 @@
 import * as React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import Collapse from '@mui/material/Collapse';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import InputAdornment from '@mui/material/InputAdornment';
-import MenuItem from '@mui/material/MenuItem';
-import Pagination from '@mui/material/Pagination';
-import Skeleton from '@mui/material/Skeleton';
-import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
+import { useRouter } from 'next/navigation';
 
-import { BookOpen as BookOpenIcon } from '@phosphor-icons/react/dist/ssr/BookOpen';
+import { Book as BookIcon } from '@phosphor-icons/react/dist/ssr/Book';
 import { Clock as ClockIcon } from '@phosphor-icons/react/dist/ssr/Clock';
+import { FileText as FileTextIcon } from '@phosphor-icons/react/dist/ssr/FileText';
 import { Funnel as FunnelIcon } from '@phosphor-icons/react/dist/ssr/Funnel';
 import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/dist/ssr/MagnifyingGlass';
 import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
@@ -33,9 +25,6 @@ import {
   getUsers
 } from 'src/modules/knowledge/api';
 import { EmptyState } from 'src/modules/knowledge/components/common/empty-state';
-import { StatusChip } from 'src/modules/knowledge/components/common/status-chip';
-import { TagChips } from 'src/modules/knowledge/components/common/tag-chip';
-import { UserAvatar } from 'src/modules/knowledge/components/common/user-avatar';
 import { PRIVACY_CLASSES } from 'src/modules/knowledge/constants';
 import { useKnowledgeRole } from 'src/modules/knowledge/contexts/role-context';
 import { useAsyncAction } from 'src/modules/knowledge/hooks/use-async-action';
@@ -51,26 +40,90 @@ import type {
 import { formatRelative } from 'src/modules/knowledge/utils/format-date';
 import { paths } from 'src/paths';
 
+import { QuestionAvatar } from './question-avatar';
 import { QuestionDetailDialog } from './question-detail-dialog';
+import { QuestionStatusBadge, QuestionTagList } from './question-ui';
 
 /**
- * Sorular ekranı (FR-24) — prototip karşılığı: `sorular.html` + `js/pages/questions.js`.
+ * Sorular ekranı (FR-24) — prototip karşılığı: `sorular.html` + `js/pages/sorular.js`.
  *
- * Herkesin sorduğu tüm sorular görünür (varsayılan), "Sadece benimkiler" ile
- * daraltılabilir. KVKK maskeleme kuralı burada da geçerlidir.
+ * Görünüm, prototipin sıcak-nötr panel dilini birebir yeniden üretir; MUI
+ * bileşenleri yerine düz işaretleme + Tailwind kullanılır (renkler `styles.css`
+ * içindeki `body[data-sayfa="sorular"]` bloklarından piksel piksel alınmıştır).
  */
 
 const PAGE_SIZE = 10;
 
-/** Kolon genişlikleri tek yerde: başlık satırı ile kayıt satırları aynı ızgarayı paylaşır. */
-const GRID = 'grid grid-cols-[minmax(0,1.1fr)_minmax(0,2.4fr)_minmax(0,1.2fr)_auto_auto_minmax(0,1.2fr)] gap-4';
+/** Başlık satırı ile kayıt satırları aynı ızgarayı paylaşır (prototiple aynı oran). */
+const GRID =
+  'grid grid-cols-[minmax(140px,1.05fr)_minmax(200px,2.1fr)_minmax(105px,1fr)_minmax(115px,1fr)_minmax(95px,0.85fr)_minmax(180px,1.5fr)] gap-x-3 items-center';
+
+const COLUMN_KEYS = ['asker', 'question', 'company', 'status', 'createdAt', 'tags'] as const;
 
 function truncate(value: string, max: number): string {
   return value.length > max ? `${value.slice(0, max - 1).trimEnd()}…` : value;
 }
 
+/**
+ * Prototipteki `gorunumSorulariniHazirla()` karşılığı.
+ *
+ * 1) Aynı soru metninin farklı durum/tekrar gönderimlerle oluşan kopyalarından
+ *    yalnızca ilki listede kalır.
+ * 2) Etiketi olmayan (ya da 1 taneden az olan) sorular, listenin dolu görünmesi
+ *    için havuzdan KOZMETİK olarak 2 etikete tamamlanır — erişimle ilgisi yok,
+ *    yalnızca görünüm zenginliği (03 §FR-24 notu).
+ */
+function prepareViewQuestions(questions: QuestionListItem[], tagPool: Tag[]): QuestionListItem[] {
+  if (!tagPool.length) {
+    return questions;
+  }
+
+  const seen = new Set<string>();
+  const unique = questions.filter(question => {
+    const key = question.text.trim().replace(/\s+/g, ' ').toLocaleLowerCase('tr-TR');
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+
+    return true;
+  });
+
+  return unique.map((question, index) => {
+    const existing = (question.tag_id ?? []).filter(id => tagPool.some(tag => tag.id === id));
+    const tagIds = [...existing];
+    for (let offset = 0; tagIds.length < Math.min(2, tagPool.length); offset += 1) {
+      const candidate = tagPool[(index * 2 + offset) % tagPool.length].id;
+      if (!tagIds.includes(candidate)) {
+        tagIds.push(candidate);
+      }
+    }
+
+    return { ...question, tag_id: tagIds };
+  });
+}
+
+/** Prototipteki sayfalama penceresi: 1, son, aktif±1 + aradaki boşluklarda "…". */
+function paginationItems(pageCount: number, current: number): Array<number | 'gap'> {
+  const shown = new Set([1, pageCount, current - 1, current, current + 1]);
+  const pages = [...shown].filter(page => page >= 1 && page <= pageCount).sort((a, b) => a - b);
+
+  const result: Array<number | 'gap'> = [];
+  let previous = 0;
+  for (const page of pages) {
+    if (previous && page - previous > 1) {
+      result.push('gap');
+    }
+    result.push(page);
+    previous = page;
+  }
+
+  return result;
+}
+
 export function QuestionsScreen(): React.JSX.Element {
   const { t } = useTranslation();
+  const router = useRouter();
   const { user } = useKnowledgeRole();
   const { run } = useAsyncAction();
   const { prompt, promptDialog } = usePromptDialog();
@@ -153,10 +206,13 @@ export function QuestionsScreen(): React.JSX.Element {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  // Görünüm listesi: metin tekilleştirme + kozmetik etiket doldurma (prototiple aynı).
+  const viewQuestions = useMemo(() => prepareViewQuestions(questions, tags), [questions, tags]);
+
   const filtered = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase('tr-TR');
 
-    return questions.filter(
+    return viewQuestions.filter(
       question =>
         (!needle || question.text.toLocaleLowerCase('tr-TR').includes(needle)) &&
         (!status || question.status === status) &&
@@ -164,7 +220,7 @@ export function QuestionsScreen(): React.JSX.Element {
         (!tagId || (question.tag_id ?? []).includes(tagId)) &&
         (!onlyMine || question.asker_id === user?.id)
     );
-  }, [companyId, onlyMine, questions, search, status, tagId, user?.id]);
+  }, [companyId, onlyMine, viewQuestions, search, status, tagId, user?.id]);
 
   // Filtre değiştiğinde ilk sayfaya dön; aksi hâlde boş bir sayfada kalınıyor.
   useEffect(() => {
@@ -254,133 +310,143 @@ export function QuestionsScreen(): React.JSX.Element {
 
   const newQuestionReady = isRouteMigrated(paths.knowledgeNewQuestion);
 
-  return (
-    <div className="mx-auto w-full max-w-[1120px] px-4 py-4 md:px-8 md:py-6">
-      <header className="mb-5">
-        <h1 className="text-2xl font-semibold">{t('knowledge.questions.title')}</h1>
-        <p className="mt-1 text-fg-muted">{t('knowledge.questions.subtitle')}</p>
-      </header>
+  const selectClass =
+    'min-w-[150px] max-w-[230px] rounded-lg border border-[#e5e5e2] bg-white px-2.5 py-2 text-[13px] text-[#171816] outline-none focus:border-[#0053fd] dark:border-border dark:bg-surface dark:text-fg';
 
-      <section className="rounded-bubble border border-border bg-surface">
-        <div className="flex flex-wrap items-center justify-end gap-2.5 border-b border-border px-4 py-3">
-          <TextField
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <MagnifyingGlassIcon />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <kbd className="rounded border border-border px-1.5 py-0.5 text-[11px] text-fg-muted">⌘K</kbd>
-                </InputAdornment>
-              )
-            }}
-            className="min-w-[220px] flex-1"
-            inputRef={searchRef}
-            onChange={event => setSearch(event.target.value)}
-            placeholder={t('knowledge.questions.search')}
-            size="small"
-            type="search"
-            value={search}
-          />
-          <Button
-            aria-expanded={filtersOpen}
-            className="normal-case"
-            onClick={() => setFiltersOpen(open => !open)}
-            startIcon={<FunnelIcon />}
-            variant="outlined"
-          >
-            {t('knowledge.questions.filters')}
-          </Button>
-          {/* "Yeni Soru Sor" ekranı henüz taşınmadı. */}
-          <Tooltip title={newQuestionReady ? '' : t('knowledge.discover.notMigrated')}>
-            <span>
-              <Button
-                className="normal-case"
-                disabled={!newQuestionReady}
-                startIcon={<PlusIcon />}
-                variant="contained"
-              >
-                {t('knowledge.questions.newQuestion')}
-              </Button>
+  return (
+    <div className="mx-auto w-full max-w-[1200px] p-4 md:p-6">
+      <section className="overflow-hidden rounded-2xl border border-[#e7e7e5] bg-white shadow-[0_1px_2px_rgba(18,18,16,0.025)] dark:border-border dark:bg-surface">
+        {/* Araç çubuğu — prototipteki `.ds-soru-araclar` */}
+        <div className="flex min-h-[68px] flex-wrap items-center gap-3.5 border-b border-[#ececea] px-4 py-3 dark:border-border">
+          <div className="inline-flex items-center rounded-[9px] bg-[#f2f2f0] p-[3px] dark:bg-surface-1">
+            <span className="inline-flex items-center gap-1.5 rounded-[7px] bg-white px-[9px] py-1.5 text-[13px] text-[#222321] shadow-[0_1px_2px_rgba(0,0,0,0.07)] dark:bg-surface-2 dark:text-fg">
+              <FileTextIcon size={15} />
+              {t('knowledge.questions.viewList', { defaultValue: 'Liste' })}
             </span>
-          </Tooltip>
+          </div>
+
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {/* Arama — prototipteki `.ds-soru-arama` */}
+            <label className="flex h-[38px] w-[min(270px,45vw)] items-center gap-2 rounded-[10px] border border-[#e1e1df] bg-white px-2.5 text-[#8a8c87] dark:border-border dark:bg-surface">
+              <MagnifyingGlassIcon
+                className="shrink-0"
+                size={16}
+              />
+              <input
+                aria-label={t('knowledge.questions.search')}
+                autoComplete="off"
+                className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-[#171816] outline-none dark:text-fg"
+                onChange={event => setSearch(event.target.value)}
+                placeholder={t('knowledge.questions.search')}
+                ref={searchRef}
+                type="search"
+                value={search}
+              />
+              <kbd className="hidden whitespace-nowrap rounded-[5px] border border-[#e2e2df] bg-[#f7f7f5] px-[5px] py-1 text-[11px] leading-none text-[#858782] sm:inline dark:border-border dark:bg-surface-1 dark:text-fg-muted">
+                ⌘ K
+              </kbd>
+            </label>
+
+            <button
+              aria-expanded={filtersOpen}
+              className="inline-flex min-h-[36px] items-center gap-2 rounded-[9px] border border-[#e5e5e2] bg-white px-3 py-[7px] text-[13px] font-medium text-[#3f453f] shadow-[0_1px_1px_rgba(0,0,0,0.02)] transition hover:border-[#d9d9d6] hover:bg-[#f7f7f5] dark:border-border dark:bg-surface dark:text-fg dark:hover:bg-surface-1"
+              onClick={() => setFiltersOpen(open => !open)}
+              type="button"
+            >
+              <FunnelIcon size={16} />
+              {t('knowledge.questions.filters')}
+            </button>
+
+            {/* "Yeni Soru Sor" ekranı henüz taşınmadıysa buton yine tam renkli
+                durur (prototiple birebir); tıklanınca hazır olduğunda yönlendirir,
+                değilse bilgilendirir. */}
+            <button
+              className="inline-flex min-h-[36px] items-center gap-2 rounded-[9px] border border-[#0053fd] bg-[#0053fd] px-3 py-[7px] text-[13px] font-medium text-white transition hover:border-[#0043d6] hover:bg-[#0043d6]"
+              onClick={() => {
+                if (newQuestionReady) {
+                  router.push(paths.knowledgeNewQuestion);
+                } else {
+                  toast.info(t('knowledge.discover.notMigrated'));
+                }
+              }}
+              type="button"
+            >
+              <PlusIcon size={16} />
+              {t('knowledge.questions.newQuestion')}
+            </button>
+          </div>
         </div>
 
-        <Collapse in={filtersOpen}>
-          <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
-            <TextField
-              className="min-w-[160px]"
-              label={t('knowledge.questions.columns.status')}
+        {/* Filtre çubuğu — prototipteki `.ds-filtreler` */}
+        {filtersOpen ? (
+          <div className="flex flex-wrap items-center gap-2.5 border-b border-[#ececea] bg-[#fafaf9] px-4 py-3 dark:border-border dark:bg-surface-1">
+            <select
+              aria-label={t('knowledge.questions.columns.status')}
+              className={selectClass}
               onChange={event => setStatus(event.target.value)}
-              select
-              size="small"
               value={status}
             >
-              <MenuItem value="">{t('knowledge.questions.allStatuses')}</MenuItem>
-              <MenuItem value="eskale_edildi">{t('knowledge.status.eskale_edildi')}</MenuItem>
-              <MenuItem value="cozuldu">{t('knowledge.status.cozuldu')}</MenuItem>
-            </TextField>
-            <TextField
-              className="min-w-[180px]"
-              label={t('knowledge.questions.columns.company')}
+              <option value="">{t('knowledge.questions.allStatuses')}</option>
+              <option value="eskale_edildi">{t('knowledge.status.eskale_edildi')}</option>
+              <option value="cozuldu">{t('knowledge.status.cozuldu')}</option>
+            </select>
+            <select
+              aria-label={t('knowledge.questions.columns.company')}
+              className={selectClass}
               onChange={event => setCompanyId(event.target.value)}
-              select
-              size="small"
               value={companyId}
             >
-              <MenuItem value="">{t('knowledge.questions.allCompanies')}</MenuItem>
+              <option value="">{t('knowledge.questions.allCompanies')}</option>
               {companies.map(company => (
-                <MenuItem
+                <option
                   key={company.id}
                   value={company.id}
                 >
                   {company.name}
-                </MenuItem>
+                </option>
               ))}
-            </TextField>
-            <TextField
-              className="min-w-[180px]"
-              label={t('knowledge.questions.columns.tags')}
+            </select>
+            <select
+              aria-label={t('knowledge.questions.columns.tags')}
+              className={selectClass}
               onChange={event => setTagId(event.target.value)}
-              select
-              size="small"
               value={tagId}
             >
-              <MenuItem value="">{t('knowledge.questions.allTags')}</MenuItem>
+              <option value="">{t('knowledge.questions.allTags')}</option>
               {tags.map(tag => (
-                <MenuItem
+                <option
                   key={tag.id}
                   value={tag.id}
                 >
                   {tag.name}
-                </MenuItem>
+                </option>
               ))}
-            </TextField>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={onlyMine}
-                  onChange={event => setOnlyMine(event.target.checked)}
-                />
-              }
-              label={t('knowledge.questions.onlyMine')}
-            />
-            <span className="ml-auto text-[13px] text-fg-muted">
-              {t('knowledge.questions.filterSummary', { shown: filtered.length, total: questions.length })}
+            </select>
+            <label className="inline-flex cursor-pointer items-center gap-2 text-[14px] text-[#171816] dark:text-fg">
+              <input
+                checked={onlyMine}
+                className="h-4 w-4 cursor-pointer accent-[#0053fd]"
+                onChange={event => setOnlyMine(event.target.checked)}
+                type="checkbox"
+              />
+              {t('knowledge.questions.onlyMine')}
+            </label>
+            <span className="ml-auto text-[13px] text-[#979994] dark:text-fg-muted">
+              {t('knowledge.questions.filterSummary', { shown: filtered.length, total: viewQuestions.length })}
             </span>
           </div>
-        </Collapse>
+        ) : null}
 
         {isLoading ? (
-          <div className="flex flex-col gap-2 p-4">
-            {[0, 1, 2].map(index => (
-              <Skeleton
-                height={56}
+          <div className="flex flex-col">
+            {[0, 1, 2, 3, 4].map(index => (
+              <div
+                className="flex min-h-[66px] items-center gap-3 border-b border-[#efefed] px-4 dark:border-border"
                 key={index}
-                variant="rounded"
-              />
+              >
+                <span className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-[#ececea] dark:bg-surface-1" />
+                <span className="h-3 flex-1 animate-pulse rounded bg-[#ececea] dark:bg-surface-1" />
+              </div>
             ))}
           </div>
         ) : slice.length === 0 ? (
@@ -394,18 +460,19 @@ export function QuestionsScreen(): React.JSX.Element {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <div className="min-w-[860px]">
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[920px]">
+                {/* Başlık satırı */}
                 <div
-                  className={`${GRID} border-b border-border px-4 py-2 text-[12px] font-semibold uppercase tracking-wide text-fg-muted`}
+                  className={`${GRID} min-h-[46px] border-b border-[#ececea] px-4 text-[11.5px] font-semibold text-[#666863] dark:border-border dark:text-fg-muted`}
                   role="row"
                 >
-                  <span>{t('knowledge.questions.columns.asker')}</span>
-                  <span>{t('knowledge.questions.columns.question')}</span>
-                  <span>{t('knowledge.questions.columns.company')}</span>
-                  <span>{t('knowledge.questions.columns.status')}</span>
-                  <span>{t('knowledge.questions.columns.createdAt')}</span>
-                  <span>{t('knowledge.questions.columns.tags')}</span>
+                  {COLUMN_KEYS.map(key => (
+                    <span key={key}>
+                      {t(`knowledge.questions.columns.${key}`)}
+                      <span className="ml-1 text-[9px] text-[#aaa]">↕</span>
+                    </span>
+                  ))}
                 </div>
 
                 {slice.map(question => {
@@ -418,7 +485,7 @@ export function QuestionsScreen(): React.JSX.Element {
 
                   return (
                     <div
-                      className={`${GRID} w-full cursor-pointer items-center border-b border-border px-4 py-3 text-left transition hover:bg-primary/5`}
+                      className={`${GRID} min-h-[66px] cursor-pointer border-b border-[#efefed] px-4 py-2 text-left transition-colors hover:bg-[#fafaf8] focus:bg-[#fafaf8] focus:outline-none dark:border-border dark:hover:bg-surface-1`}
                       key={question.id}
                       onClick={() => openDetail(question.id)}
                       onKeyDown={event => {
@@ -430,22 +497,27 @@ export function QuestionsScreen(): React.JSX.Element {
                       role="button"
                       tabIndex={0}
                     >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <UserAvatar
+                      {/* Soran */}
+                      <span className="flex min-w-0 items-center gap-[9px]">
+                        <QuestionAvatar
                           name={asker?.name}
-                          size={30}
+                          size={32}
+                          userId={question.asker_id}
                         />
-                        <span className="truncate text-sm">{asker?.name ?? question.asker_id}</span>
+                        <span className="truncate text-[12.5px] text-[#424440] dark:text-fg">
+                          {asker?.name ?? question.asker_id}
+                        </span>
                       </span>
 
+                      {/* Soru */}
                       <span className="flex min-w-0 flex-col">
                         <strong
-                          className="truncate text-sm"
+                          className="block truncate text-[13px] font-[550] text-[#222321] dark:text-fg"
                           title={question.text}
                         >
                           {truncate(question.text, 84)}
                         </strong>
-                        <small className="text-fg-muted">
+                        <small className="mt-0.5 block truncate text-[11.5px] text-[#969893] dark:text-fg-muted">
                           {answerSummary(question)}
                           {question.flag_count
                             ? ` · ${t('knowledge.questions.reportCount', { count: question.flag_count })}`
@@ -453,48 +525,57 @@ export function QuestionsScreen(): React.JSX.Element {
                         </small>
                       </span>
 
-                      <span className="flex min-w-0 items-center gap-2 text-sm">
+                      {/* Şirket */}
+                      <span className="flex min-w-0 items-center gap-[9px] text-[12.5px] text-[#424440] dark:text-fg">
                         {company ? (
                           <>
-                            <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-fg-muted/10 text-[11px] font-semibold">
+                            <span className="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-[#e4efec] text-[11px] font-[650] text-[#53736b]">
                               {company.name.slice(0, 1)}
                             </span>
                             <span className="truncate">{company.name}</span>
                           </>
                         ) : (
                           <>
-                            <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-info/15 text-info-strong dark:text-info-light">
-                              <BookOpenIcon size={13} />
+                            <span className="grid h-[27px] w-[27px] shrink-0 place-items-center rounded-full bg-[#eef1f7] text-[#6b7280]">
+                              <BookIcon size={14} />
                             </span>
-                            <span className="truncate text-fg-muted">
-                              {t('knowledge.questions.generalLegislation')}
-                            </span>
+                            <span className="truncate">{t('knowledge.questions.generalLegislation')}</span>
                           </>
                         )}
                       </span>
 
+                      {/* Durum */}
                       <span>
-                        <StatusChip status={question.status} />
+                        <QuestionStatusBadge status={question.status} />
                       </span>
 
-                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-fg-muted">
-                        <ClockIcon />
-                        {formatRelative(question.created_at)}
+                      {/* Oluşturuldu */}
+                      <span className="flex min-w-0 items-center gap-[9px] text-[12.5px] text-[#424440] dark:text-fg">
+                        <ClockIcon
+                          className="shrink-0 text-[#8c8e89]"
+                          size={14}
+                        />
+                        <span className="truncate">{formatRelative(question.created_at)}</span>
                       </span>
 
-                      <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-                        <TagChips
+                      {/* Etiketler */}
+                      <span className="flex min-w-0 flex-wrap items-center gap-[5px]">
+                        <QuestionTagList
                           max={2}
                           pool={tags}
                           tags={questionTags}
                         />
                         {question.privacy_class === 'kisisel_veri' && privacy ? (
-                          <Tooltip title={t(privacy.descriptionKey)}>
-                            <span className="inline-flex items-center gap-1 rounded-md bg-warning/15 px-1.5 py-0.5 text-[11px] text-warning-strong dark:text-warning-light">
-                              <ShieldCheckIcon size={12} />
-                              {t(privacy.labelKey)}
-                            </span>
-                          </Tooltip>
+                          <span
+                            className="inline-flex items-center gap-[5px] whitespace-nowrap text-[10.5px] font-medium text-[#8b93b5]"
+                            title={t(privacy.descriptionKey)}
+                          >
+                            <ShieldCheckIcon
+                              className="shrink-0"
+                              size={13}
+                            />
+                            {t(privacy.labelKey)}
+                          </span>
                         ) : null}
                       </span>
                     </div>
@@ -503,17 +584,72 @@ export function QuestionsScreen(): React.JSX.Element {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-              <span className="text-[13px] text-fg-muted">
-                {t('knowledge.questions.rangeSummary', { from: from + 1, to, total: filtered.length })}
+            {/* Alt bar — sayaç + sayfalama */}
+            <div className="flex min-h-[58px] flex-wrap items-center gap-3 bg-[#fafaf9] px-4 py-2.5 text-[12.5px] text-[#777974] dark:bg-surface-1 dark:text-fg-muted">
+              <span>
+                {t('knowledge.questions.rangeSummary', { from: from + 1, to, total: filtered.length })
+                  .split(/(\d+[–-]\d+|\d+)/)
+                  .map((part, index) =>
+                    /^\d/.test(part) ? (
+                      <strong
+                        className="text-[#333431] dark:text-fg"
+                        key={index}
+                      >
+                        {part}
+                      </strong>
+                    ) : (
+                      part
+                    )
+                  )}
               </span>
-              <Pagination
-                count={pageCount}
-                onChange={(_event, value) => setPage(value)}
-                page={currentPage}
-                shape="rounded"
-                size="small"
-              />
+
+              <nav
+                aria-label={t('knowledge.questions.title')}
+                className="ml-auto flex items-center gap-1.5"
+              >
+                <button
+                  aria-label={t('common.previous', { defaultValue: 'Önceki' })}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-[#e5e5e2] bg-white text-[12.5px] font-semibold text-[#62645f] transition hover:border-[#d5d5d2] hover:bg-[#f1f1ef] disabled:cursor-default disabled:opacity-[0.38] dark:border-border dark:bg-surface dark:text-fg-muted"
+                  disabled={currentPage === 1}
+                  onClick={() => setPage(currentPage - 1)}
+                  type="button"
+                >
+                  ‹
+                </button>
+                {paginationItems(pageCount, currentPage).map((item, index) =>
+                  item === 'gap' ? (
+                    <span
+                      className="px-1 text-[#aaa]"
+                      key={`gap-${index}`}
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      aria-current={item === currentPage ? 'page' : undefined}
+                      className={`grid h-8 w-8 place-items-center rounded-lg border text-[12.5px] font-semibold transition ${
+                        item === currentPage
+                          ? 'border-[#0053fd] bg-[#0053fd] text-white'
+                          : 'border-[#e5e5e2] bg-white text-[#62645f] hover:border-[#d5d5d2] hover:bg-[#f1f1ef] dark:border-border dark:bg-surface dark:text-fg-muted'
+                      }`}
+                      key={item}
+                      onClick={() => setPage(item)}
+                      type="button"
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+                <button
+                  aria-label={t('common.next', { defaultValue: 'Sonraki' })}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-[#e5e5e2] bg-white text-[12.5px] font-semibold text-[#62645f] transition hover:border-[#d5d5d2] hover:bg-[#f1f1ef] disabled:cursor-default disabled:opacity-[0.38] dark:border-border dark:bg-surface dark:text-fg-muted"
+                  disabled={currentPage === pageCount}
+                  onClick={() => setPage(currentPage + 1)}
+                  type="button"
+                >
+                  ›
+                </button>
+              </nav>
             </div>
           </>
         )}
