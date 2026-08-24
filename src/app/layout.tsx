@@ -35,7 +35,8 @@ export default async function Layout({ children }: LayoutProps): Promise<React.J
 
   return (
     <html suppressHydrationWarning>
-      <body>
+      {/* id, Tailwind'in `important` seçicisi — bkz. tailwind.config.ts */}
+      <body id="app-root">
         <InitColorSchemeScript
           attribute="data-mui-color-scheme"
           modeStorageKey="mui-mode"

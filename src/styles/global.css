@@ -13,6 +13,10 @@
 @import '~@fontsource/plus-jakarta-sans/600.css';
 @import '~@fontsource/plus-jakarta-sans/700.css';
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Variables */
 :root {
   --fontSize-xs: 0.75rem;
@@ -46,33 +50,113 @@ body {
   height: 100%;
 }
 
-/*
- * Width-only UI zoom: shell sidebar vs main match loader sidebar vs content column.
- */
-@media (min-width: 1200px) and (max-width: 1499px) {
-  .app .sidebar-shell,
-  .loading-nav-full .loading-nav-sidebar {
-    zoom: 0.8;
-    height: 125vh !important;
-  }
+/* ═══════════════════════════════════════════════════════════════════════════
+   Bilgi Bankası token'ları
+   MUI paletinde karşılığı OLMAYAN değerler. Renk kararı tek yerde dursun diye
+   burada; Tailwind bunları `bg-[var(--kb-…)]` biçiminde okuyor. Koyu tema
+   karşılıkları hemen altta.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Derin Araştırma moru */
+  --kb-research-bg: #f3edfd;
+  --kb-research-fg: #6d3fd4;
 
-  .app .shell > main.main,
-  .app .shell > .main,
-  .loading-nav-full .loading-nav-content {
-    zoom: 0.8;
-  }
+  /* ── Kabuk (sidebar / topbar) ──
+     Sidebar prototipte koyu lacivert ve HER İKİ TEMADA da koyu kalır: uygulamanın
+     kimliği bu panelde duruyor, açık temada beyaza dönmesi referans tasarımı bozar.
+     Değerler ornek-tasarim.png'den örneklendi (prototip css/styles.css :root). */
+  --kb-sidebar-w: 226px;
+  --kb-topbar-h: 68px;
+  --kb-sidebar-bg: #081f3d;
+  --kb-sidebar-hover: rgba(255, 255, 255, 0.045);
+  --kb-sidebar-active: rgba(255, 255, 255, 0.085);
+  --kb-sidebar-edge: #3d8bfd;
+  --kb-sidebar-divider: rgba(255, 255, 255, 0.07);
+  --kb-sidebar-avatar: #163560;
+  --kb-on-sidebar: #eef2f8;
+  --kb-on-sidebar-soft: rgba(238, 242, 248, 0.62);
+  --kb-on-sidebar-mute: rgba(238, 242, 248, 0.34);
+  --kb-online: #21c268;
+  --kb-badge: #0754f0;
+  --kb-badge-alert: #fc5b40;
+
+  /* Karşılama ekranındaki parıltı noktaları. Açık temada hale zaten açık mavi
+     olduğu için beyaz nokta kayboluyordu; marka mavisinin açık tonu kullanılıyor. */
+  --kb-star: #7fb2ff;
+  --kb-star-glow: rgba(29, 113, 253, 0.55);
+
+  /* Karşılama ekranındaki ışık halesi */
+  --kb-hero-glow: radial-gradient(
+    ellipse at center,
+    rgba(29, 113, 253, 0.16) 0%,
+    rgba(219, 235, 254, 0.55) 42%,
+    rgba(244, 245, 249, 0) 72%
+  );
+
+  /* Etiket paleti — renk etiketin havuzdaki sırasından türer (mod 8) */
+  --kb-tag-0-bg: #dff0ff;
+  --kb-tag-0-fg: #22608d;
+  --kb-tag-0-br: #bedcf2;
+  --kb-tag-1-bg: #eee4ff;
+  --kb-tag-1-fg: #7142a5;
+  --kb-tag-1-br: #d8c3f4;
+  --kb-tag-2-bg: #dcf4e5;
+  --kb-tag-2-fg: #277145;
+  --kb-tag-2-br: #bce3ca;
+  --kb-tag-3-bg: #fff0cd;
+  --kb-tag-3-fg: #855d08;
+  --kb-tag-3-br: #edd79f;
+  --kb-tag-4-bg: #ffe2e8;
+  --kb-tag-4-fg: #a13d58;
+  --kb-tag-4-br: #f3c0cc;
+  --kb-tag-5-bg: #d9f4f3;
+  --kb-tag-5-fg: #216d6b;
+  --kb-tag-5-br: #b8dfdd;
+  --kb-tag-6-bg: #e1e7ff;
+  --kb-tag-6-fg: #4057a5;
+  --kb-tag-6-br: #c4cff7;
+  --kb-tag-7-bg: #ffe7d8;
+  --kb-tag-7-fg: #98512a;
+  --kb-tag-7-br: #f1c9b0;
 }
 
-@media (min-width: 1500px) and (max-width: 1900px) {
-  .app .sidebar-shell,
-  .loading-nav-full .loading-nav-sidebar {
-    zoom: 0.9;
-    height: 110vh !important;
-  }
+[data-mui-color-scheme='dark'] {
+  /* Koyu zeminde beyaz parıltı doğru okunuyor. */
+  --kb-star: #ffffff;
+  --kb-star-glow: rgba(255, 255, 255, 0.9);
 
-  .app .shell > main.main,
-  .app .shell > .main,
-  .loading-nav-full .loading-nav-content {
-    zoom: 0.9;
-  }
+  --kb-research-bg: #2f2447;
+  --kb-research-fg: #cbb0f0;
+
+  --kb-hero-glow: radial-gradient(
+    ellipse at center,
+    rgba(29, 113, 253, 0.22) 0%,
+    rgba(23, 54, 102, 0.35) 42%,
+    rgba(9, 10, 11, 0) 72%
+  );
+
+  --kb-tag-0-bg: #16324a;
+  --kb-tag-0-fg: #9fd0f2;
+  --kb-tag-0-br: #23496b;
+  --kb-tag-1-bg: #2f2447;
+  --kb-tag-1-fg: #cbb0f0;
+  --kb-tag-1-br: #453569;
+  --kb-tag-2-bg: #183a29;
+  --kb-tag-2-fg: #9fdcb8;
+  --kb-tag-2-br: #255540;
+  --kb-tag-3-bg: #3d3115;
+  --kb-tag-3-fg: #e8c877;
+  --kb-tag-3-br: #5a4720;
+  --kb-tag-4-bg: #43222c;
+  --kb-tag-4-fg: #f0a8bc;
+  --kb-tag-4-br: #63333f;
+  --kb-tag-5-bg: #16393a;
+  --kb-tag-5-fg: #93d8d5;
+  --kb-tag-5-br: #225453;
+  --kb-tag-6-bg: #232c4d;
+  --kb-tag-6-fg: #b3c0f2;
+  --kb-tag-6-br: #35406e;
+  --kb-tag-7-bg: #402719;
+  --kb-tag-7-fg: #eeb28c;
+  --kb-tag-7-br: #5d3a26;
 }

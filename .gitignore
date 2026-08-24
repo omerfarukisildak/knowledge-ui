@@ -38,3 +38,12 @@ next-env.d.ts
 #webstrom
 .idea/
 .worktrees/
+
+# Prototip — taşıma kaynağı, iç içe git deposu (bkz. docs/knowledge-migration-plan.md §7)
+Knowledge-Base-PRD/
+
+# Yerel env yedekleri — `.env*.local` deseni `.bak` uzantılısını yakalamıyor
+.env*.bak*
+
+# Ajan worktree'leri: canlı git worktree'si + node_modules (yüzlerce MB)
+.claude/worktrees/

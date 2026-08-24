@@ -18,24 +18,9 @@ export interface LogoProps {
   objectPosition?: string;
 }
 
-/** Collapsed sidebar: square mark 44×44 per Datassist Ürün UI 2 (`logo-2.png`). Deploy as `public/assets/datassist-logo-compact.png` or set `NEXT_PUBLIC_SIDEBAR_COMPACT_LOGO_URL`. */
+/** Kare kompakt logo (44×44). */
 export const SIDEBAR_COMPACT_LOGO_URL =
   process.env.NEXT_PUBLIC_SIDEBAR_COMPACT_LOGO_URL ?? '/assets/datassist-logo-compact.png';
-
-export const LOGO_SHELL_COMPACT_BOX = {
-  alt: '',
-  height: 44,
-  intrinsic: { height: 44, width: 44 },
-  objectPosition: 'center center',
-  url: SIDEBAR_COMPACT_LOGO_URL,
-  width: 44
-} as const satisfies Pick<LogoProps, 'alt' | 'height' | 'intrinsic' | 'objectPosition' | 'url' | 'width'>;
-
-/** Same max box as `@datassist/ui-shell-next` `.sidebar-logo--full img` (see shell sidebar). */
-export const LOGO_SHELL_SIDEBAR_BOX = { height: 40, width: 168 } as const;
-
-/** Same bounds as shell footer `.app-footer__logo img` (height + max-width). */
-export const LOGO_SHELL_FOOTER_BOX = { height: 22, width: 100 } as const;
 
 /** Natural pixel size of `public/assets/datassist-logo.png` (used to reserve aspect ratio / reduce CLS). */
 export const DATASSIST_LOGO_INTRINSIC = { height: 68, width: 400 } as const;

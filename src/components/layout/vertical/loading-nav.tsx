@@ -2,19 +2,20 @@
 
 import * as React from 'react';
 
-import Link from 'next/link';
-
-import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { LOGO_SHELL_SIDEBAR_BOX, Logo } from 'src/components/logo';
-import { config } from 'src/config';
-import { paths } from 'src/paths';
-
+/**
+ * Oturum ve modül izni beklenirken gösterilen iskelet.
+ *
+ * Kabuğun (`knowledge-shell.tsx`) ölçülerini ve koyu sidebar'ını taklit eder:
+ * yükleme ekranı açık zeminli bir panel gösterip hemen ardından koyu laciverte
+ * atlıyordu, geçiş göze batıyordu.
+ */
 export interface LoadingNavProps {
   /**
-   * `full` — standalone chrome when shell providers are not mounted yet.
-   * `embedded` — spinner only for Next.js `loading.tsx` inside the real shell main (avoids double sidebar/header).
+   * `full` — kabuk sağlayıcıları henüz kurulmadığında tüm ekran.
+   * `embedded` — gerçek kabuğun içindeki `loading.tsx` için yalnızca gösterge
+   * (çift sidebar/başlık çizilmesin).
    */
   variant?: 'full' | 'embedded';
 }
@@ -22,136 +23,27 @@ export interface LoadingNavProps {
 export function LoadingNav({ variant = 'full' }: LoadingNavProps): React.JSX.Element {
   if (variant === 'embedded') {
     return (
-      <Box
-        sx={{
-          alignItems: 'center',
-          display: 'flex',
-          flex: '1 1 auto',
-          justifyContent: 'center',
-          minHeight: 0,
-          width: '100%'
-        }}
-      >
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center py-16">
         <CircularProgress size={48} />
-      </Box>
+      </div>
     );
   }
 
   return (
-    <Box
-      className="loading-nav-full"
-      sx={{
-        bgcolor: 'background.default',
-        color: 'text.primary',
-        display: 'flex',
-        height: '100vh',
-        minHeight: '100vh',
-        overflow: 'hidden'
-      }}
-    >
-      <Box
-        className="loading-nav-sidebar"
-        sx={{
-          bgcolor: 'background.paper',
-          borderRight: '1px solid',
-          borderColor: 'divider',
-          display: { xs: 'none', lg: 'flex' },
-          flexDirection: 'column',
-          flexShrink: 0,
-          height: '100vh',
-          p: '18px 14px 16px',
-          width: 260
-        }}
-      >
-        {/* Mirror `@datassist/ui-shell-next` `.sidebar__top`: logo link flexes; badge is a sibling (stable alignment). */}
-        <Box
-          sx={{
-            alignItems: 'center',
-            display: 'flex',
-            gap: '8px',
-            marginBottom: '18px',
-            minHeight: 44,
-            paddingRight: '8px'
-          }}
-        >
-          <Box
-            component={Link}
-            href={paths.knowledge}
-            sx={{
-              color: 'inherit',
-              display: 'block',
-              flex: '1 1 auto',
-              lineHeight: 0,
-              minWidth: 0,
-              textDecoration: 'none'
-            }}
-          >
-            <Box
-              component="span"
-              sx={{ display: 'block' }}
-            >
-              <Logo {...LOGO_SHELL_SIDEBAR_BOX} />
-            </Box>
-          </Box>
-          <Box
-            aria-hidden
-            component="span"
-            sx={{
-              alignSelf: 'center',
-              backgroundColor: 'primary.main',
-              borderRadius: '6px',
-              color: 'primary.contrastText',
-              flexShrink: 0,
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: '0.03em',
-              lineHeight: 1.2,
-              px: '10px',
-              py: '6px'
-            }}
-          >
-            {config.site.shortName}
-          </Box>
-        </Box>
-      </Box>
-      <Box
-        className="loading-nav-content"
-        sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column', minWidth: 0 }}
-      >
-        <Box
-          component="header"
-          sx={{
-            bgcolor: 'background.paper',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            flexShrink: 0,
-            minHeight: 72
-          }}
+    <div className="flex h-screen min-h-screen overflow-hidden bg-surface-1 dark:bg-canvas">
+      <div className="hidden w-sidebar shrink-0 flex-col bg-sidebar px-[18px] pt-[22px] lg:flex">
+        <img
+          alt=""
+          className="block h-auto w-[132px] object-contain opacity-90"
+          src="/assets/knowledge-sidebar-logo.png"
         />
-        <Box
-          component="main"
-          sx={{
-            alignItems: 'center',
-            display: 'flex',
-            flex: '1 1 auto',
-            justifyContent: 'center',
-            minHeight: 0,
-            overflow: 'hidden'
-          }}
-        >
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="h-topbar shrink-0 border-b border-border bg-canvas" />
+        <div className="flex min-h-0 flex-1 items-center justify-center">
           <CircularProgress size={48} />
-        </Box>
-        <Box
-          component="footer"
-          sx={{
-            bgcolor: 'background.level1',
-            borderTop: '1px solid',
-            borderColor: 'divider',
-            flexShrink: 0,
-            minHeight: 42
-          }}
-        />
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

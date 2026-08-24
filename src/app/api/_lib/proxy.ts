@@ -12,6 +12,8 @@ const FORWARDED_RESPONSE_HEADERS = ['content-type', 'content-disposition'];
 interface ProxyOptions {
   /** Base URL override; defaults to `BACKEND_API_URL`. */
   baseUrl?: string;
+  /** Env var name reported when `baseUrl` is missing — the caller picks the service. */
+  baseUrlName?: string;
   method?: ProxyMethod;
   /** Raw request body, forwarded as-is (already serialized). */
   body?: BodyInit | null;
@@ -28,7 +30,9 @@ export async function proxyRequest(path: string, options: ProxyOptions = {}): Pr
   const baseUrl = options.baseUrl ?? process.env.BACKEND_API_URL;
 
   if (!baseUrl) {
-    return NextResponse.json({ message: 'BACKEND_API_URL tanımlı değil.' }, { status: 500 });
+    const name = options.baseUrlName ?? 'BACKEND_API_URL';
+
+    return NextResponse.json({ message: `${name} tanımlı değil.` }, { status: 500 });
   }
 
   const accessToken = await getAccessToken();

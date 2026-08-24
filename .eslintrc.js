@@ -51,6 +51,28 @@ module.exports = {
       env: {
         jest: true
       }
+    },
+    {
+      /**
+       * Bilgi Bankası mimari kuralı: tohum veriye YALNIZCA mock adaptörü erişir.
+       * Prototipte bunu `denetim.sh` denetliyordu; burada lint yakalıyor.
+       */
+      files: ['src/**/*.ts', 'src/**/*.tsx'],
+      excludedFiles: ['src/modules/knowledge/api/adapters/mock/**', 'src/modules/knowledge/mocks/**'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: ['**/knowledge/mocks/**', 'src/modules/knowledge/mocks/**'],
+                message:
+                  'Tohum veriye yalnızca src/modules/knowledge/api/adapters/mock erişebilir. Veriye src/modules/knowledge/api üzerinden ulaşın.'
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 };

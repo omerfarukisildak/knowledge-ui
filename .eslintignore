@@ -11,3 +11,6 @@ package-lock.json
 # Misc
 dist
 public
+
+# Prototip — taşıma kaynağı, projenin kod tabanı değil (bkz. docs/knowledge-migration-plan.md)
+Knowledge-Base-PRD

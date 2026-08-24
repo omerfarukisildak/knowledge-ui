@@ -25,12 +25,7 @@ export function HeaderActions(): React.JSX.Element {
     <Stack
       direction="row"
       spacing={{ xs: 1, lg: 1.5 }}
-      sx={{
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        minWidth: 0,
-        width: '100%'
-      }}
+      sx={{ alignItems: 'center', flexShrink: 0, justifyContent: 'flex-end', minWidth: 0 }}
     >
       <LanguageSwitch />
       <UserButton />
@@ -106,7 +101,8 @@ function UserButton(): React.JSX.Element {
           color="success"
           sx={{
             '& .MuiBadge-dot': {
-              border: '2px solid #ffffff',
+              // Çerçeve temaya bağlı: koyu temada beyaz halka yüzeyden kopuyordu.
+              border: '2px solid var(--mui-palette-background-paper)',
               borderRadius: '50%',
               bottom: '6px',
               height: '12px',

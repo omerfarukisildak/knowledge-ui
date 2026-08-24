@@ -25,9 +25,20 @@ export interface Env {
   // Backends
   BACKEND_API_URL: string;
   COMMON_BACKEND_API_URL: string;
+  /** Knowledge AI service — serves the Dasi message endpoint (`POST /sorular`). */
+  AI_API_URL: string;
 
   /** When `false` (default) every module is allowed without calling the backend. */
   NEXT_PUBLIC_MODULE_PERMISSIONS_ENABLED?: string;
+
+  /** `api` routes every knowledge call to the backend; anything else keeps the mock adapter. */
+  NEXT_PUBLIC_KNOWLEDGE_DATA_SOURCE?: string;
+  /**
+   * Comma-separated service-layer function names that should hit the real backend
+   * while the rest stay on mock data — e.g. `getTags,getCompanies`. Used while the
+   * backend delivers endpoints one at a time. See `src/modules/knowledge/api/index.ts`.
+   */
+  NEXT_PUBLIC_KNOWLEDGE_LIVE_ENDPOINTS?: string;
 }
 
 declare global {

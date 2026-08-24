@@ -54,6 +54,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [token, setToken] = useState<Token | null>(null);
   const isRefreshingRef = useRef(false);
+  /** Authorization code yalnızca bir kez token'a çevrilir (bkz. login effect'i). */
+  const loginAttemptedRef = useRef(false);
 
   const signOut = useCallback(async () => {
     try {
@@ -98,7 +100,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token, refreshTokenIfNeeded]);
 
   useEffect(() => {
-    if (urlCode) {
+    /**
+     * OAuth authorization code TEK KULLANIMLIKTIR. Bu effect birden fazla kez
+     * koşarsa (React 18 dev modunda effect'ler iki kez çalışır; ayrıca
+     * `useSearchParams()` her render'da yeni referans döndürebildiği için
+     * bağımlılık listesi de yeniden tetiklenir) ikinci denemede SSO
+     * `invalid_grant` döner. O hata `login()` içindeki catch'e düşer ve
+     * `clearTokenCookie()` çağrılarak İLK denemenin yazdığı geçerli token
+     * silinir — giriş hiç tamamlanamaz. Bu yüzden deneme bir kezle sınırlanır.
+     */
+    if (urlCode && !loginAttemptedRef.current) {
+      loginAttemptedRef.current = true;
       login(generatedUUID, urlCode)
         .then(async ({ token }) => {
           if (token) {
