@@ -1,8 +1,9 @@
 import type { TypographyOptions } from '@mui/material/styles/createTypography';
 
 export const typography = {
+  // Figtree — Bilgi Bankası prototipinin yazı tipi; Inter yedek olarak kalır.
   fontFamily:
-    '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+    '"Figtree", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
   body1: { fontSize: '1rem', fontWeight: 400, lineHeight: 1.5 },
   body2: { fontSize: '0.875rem', fontWeight: 400, lineHeight: 1.57 },
   button: { fontWeight: 500 },

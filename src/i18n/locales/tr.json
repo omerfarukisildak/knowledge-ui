@@ -243,7 +243,7 @@
     "escalations": {
       "kicker": "Operasyon · canlı kuyruk",
       "title": "Eskalasyon Havuzu",
-      "subtitle": "Dasi'nin çözemediği ve otomatik cevabı yetersiz bulunan sorular tek kuyrukta bekler. Kuyruk bekleme süresine göre sıralanır; en uzun bekleyen üstte.",
+      "subtitle": "Dasi'nin yanıtlayamadığı ve otomatik yanıtı yeterli görülmeyen sorular tek bir kuyrukta toplanır. Kuyruk, bekleme süresine göre sıralanır; en uzun bekleyen soru en üstte yer alır.",
       "poolLabel": "Bilgi Uzmanı Havuzu",
       "poolNote": "{{count}} uzman aynı kuyruğu görüyor",
       "queueKicker": "Triyaj kuyruğu",
@@ -267,12 +267,16 @@
         "longest": "En uzun bekleme",
         "longestHint": "Kuyruğun tepesindeki kayıt",
         "average": "Ortalama bekleme",
-        "averageHint": "Hedef {{targetHours}} saat"
+        "averageHint": "Hedef {{targetHours}} saat",
+        "queueUnit": "soru"
       },
       "legend": {
         "critical": "kritik",
         "warning": "uyarı",
-        "normal": "süresinde"
+        "normal": "süresinde",
+        "criticalRange": "{{breachHours}} sa üzeri",
+        "warningRange": "{{targetHours}}–{{breachHours}} sa",
+        "normalRange": "{{targetHours}} sa altı"
       },
       "sla": {
         "critical": "SLA aşıldı",
@@ -331,7 +335,9 @@
         "description": "Şu anda uzman yanıtı bekleyen eskalasyon yok. Yeni bir soru otomatik cevapla çözülemezse buraya düşer ve süre saymaya başlar.",
         "toQuestions": "Tüm sorulara git",
         "toMetrics": "Metrikler"
-      }
+      },
+      "poolCount": "{{count}} uzman",
+      "poolSees": "aynı kuyruğu görüyor"
     },
     "reported": {
       "kicker": "İçerik kalite kontrolü",

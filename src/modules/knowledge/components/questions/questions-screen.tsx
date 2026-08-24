@@ -233,24 +233,39 @@ export function QuestionsScreen(): React.JSX.Element {
   const to = Math.min(from + PAGE_SIZE, filtered.length);
   const slice = filtered.slice(from, to);
 
+  // Detay, ham `getQuestion`'dan gelir; ama etiketler listedeki KOZMETİK olarak
+  // doldurulmuş görünüm kaydından alınır (prototipteki `soruDetayAc` de görünüm
+  // kaydının tag_id'sini detaya bindirir) — böylece modalda da etiketler dolu görünür.
+  const withViewTags = useCallback(
+    (question: QuestionDetail): QuestionDetail => {
+      const view = viewQuestions.find(entry => entry.id === question.id);
+
+      return view ? { ...question, tag_id: view.tag_id } : question;
+    },
+    [viewQuestions]
+  );
+
   const openDetail = useCallback(
     async (id: string) => {
       const question = await run(() => getQuestion(id), { message: t('knowledge.questions.detail.loadFailed') });
       if (!question) {
         return;
       }
-      setDetail(question);
+      setDetail(withViewTags(question));
       setDetailOpen(true);
     },
-    [run, t]
+    [run, t, withViewTags]
   );
 
-  const refreshDetail = useCallback(async (id: string) => {
-    const question = await getQuestion(id).catch(() => null);
-    if (question) {
-      setDetail(question);
-    }
-  }, []);
+  const refreshDetail = useCallback(
+    async (id: string) => {
+      const question = await getQuestion(id).catch(() => null);
+      if (question) {
+        setDetail(withViewTags(question));
+      }
+    },
+    [withViewTags]
+  );
 
   const handleFeedback = useCallback(
     async (answerId: string, value: 'onay' | 'red') => {
@@ -314,7 +329,7 @@ export function QuestionsScreen(): React.JSX.Element {
     'min-w-[150px] max-w-[230px] rounded-lg border border-[#e5e5e2] bg-white px-2.5 py-2 text-[13px] text-[#171816] outline-none focus:border-[#0053fd] dark:border-border dark:bg-surface dark:text-fg';
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] p-4 md:p-6">
+    <div className="kb-surface mx-auto w-full max-w-[1200px] p-4 md:p-6">
       <section className="overflow-hidden rounded-2xl border border-[#e7e7e5] bg-white shadow-[0_1px_2px_rgba(18,18,16,0.025)] dark:border-border dark:bg-surface">
         {/* Araç çubuğu — prototipteki `.ds-soru-araclar` */}
         <div className="flex min-h-[68px] flex-wrap items-center gap-3.5 border-b border-[#ececea] px-4 py-3 dark:border-border">
@@ -441,7 +456,7 @@ export function QuestionsScreen(): React.JSX.Element {
           <div className="flex flex-col">
             {[0, 1, 2, 3, 4].map(index => (
               <div
-                className="flex min-h-[66px] items-center gap-3 border-b border-[#efefed] px-4 dark:border-border"
+                className="flex min-h-[66px] items-center gap-3 border-b border-[#e6e6e3] px-4 dark:border-border"
                 key={index}
               >
                 <span className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-[#ececea] dark:bg-surface-1" />
@@ -485,7 +500,7 @@ export function QuestionsScreen(): React.JSX.Element {
 
                   return (
                     <div
-                      className={`${GRID} min-h-[66px] cursor-pointer border-b border-[#efefed] px-4 py-2 text-left transition-colors hover:bg-[#fafaf8] focus:bg-[#fafaf8] focus:outline-none dark:border-border dark:hover:bg-surface-1`}
+                      className={`${GRID} min-h-[66px] cursor-pointer border-b border-[#e6e6e3] px-4 py-2 text-left transition-colors hover:bg-[#fafaf8] focus:bg-[#fafaf8] focus:outline-none dark:border-border dark:hover:bg-surface-1`}
                       key={question.id}
                       onClick={() => openDetail(question.id)}
                       onKeyDown={event => {

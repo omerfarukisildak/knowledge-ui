@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
-import Tooltip from '@mui/material/Tooltip';
 
 import { ChartLineUp as ChartLineUpIcon } from '@phosphor-icons/react/dist/ssr/ChartLineUp';
 import { CheckCircle as CheckCircleIcon } from '@phosphor-icons/react/dist/ssr/CheckCircle';
@@ -19,7 +18,7 @@ import { toast } from 'sonner';
 import { answerQuestion, createArticle, getEscalationPool, getTags, getUsers } from 'src/modules/knowledge/api';
 import { EmptyState } from 'src/modules/knowledge/components/common/empty-state';
 import { MigrationLink } from 'src/modules/knowledge/components/common/migration-link';
-import { UserAvatar } from 'src/modules/knowledge/components/common/user-avatar';
+import { QuestionAvatar } from 'src/modules/knowledge/components/questions/question-avatar';
 import { ESCALATION_SLA } from 'src/modules/knowledge/constants';
 import { useKnowledgeRole } from 'src/modules/knowledge/contexts/role-context';
 import { useAsyncAction } from 'src/modules/knowledge/hooks/use-async-action';
@@ -27,7 +26,7 @@ import type { EscalationPoolItem, KnowledgeUser, Tag } from 'src/modules/knowled
 import { paths } from 'src/paths';
 
 import { ArticleFromAnswerDialog } from './article-from-answer-dialog';
-import { Duration, SLA_TONE } from './duration';
+import { Duration } from './duration';
 import { EscalationAnswerDialog } from './escalation-answer-dialog';
 import { EscalationCard } from './escalation-card';
 import { queueStats, waitedHours } from './sla';
@@ -90,7 +89,26 @@ export function EscalationsScreen(): React.JSX.Element {
       getUsers()
     ]);
 
-    setItems(pool);
+    // Kartlardaki etiketler: kayıt etiketi canlı havuzda karşılık bulmuyorsa
+    // (backend etiket kimlikleri tohum kimliklerinden farklı) liste dolu görünsün
+    // diye havuzdan KOZMETİK 2 etikete tamamlanır — Sorular ekranıyla aynı kural.
+    setItems(
+      pool.map((item, index) => {
+        const existing = (item.tag_id ?? []).filter(id => tagList.some(tag => tag.id === id));
+        if (existing.length >= 2 || !tagList.length) {
+          return { ...item, tag_id: existing };
+        }
+        const ids = [...existing];
+        for (let offset = 0; ids.length < Math.min(2, tagList.length); offset += 1) {
+          const candidate = tagList[(index * 2 + offset) % tagList.length].id;
+          if (!ids.includes(candidate)) {
+            ids.push(candidate);
+          }
+        }
+
+        return { ...item, tag_id: ids };
+      })
+    );
     setTags(tagList);
     setUsers(Object.fromEntries(userList.map(entry => [entry.id, entry])));
     // Pano başlığındaki "N uzman aynı kuyruğu görüyor" satırı — havuzun kişiye
@@ -253,94 +271,144 @@ export function EscalationsScreen(): React.JSX.Element {
   /* ═══ Pano şeridi ══════════════════════════════════════════════════════ */
 
   const segments = [
-    { className: SLA_TONE.critical.bar, count: stats.critical, label: t('knowledge.escalations.legend.critical') },
-    { className: SLA_TONE.warning.bar, count: stats.warning, label: t('knowledge.escalations.legend.warning') },
-    { className: SLA_TONE.normal.bar, count: stats.onTime, label: t('knowledge.escalations.legend.normal') }
+    {
+      key: 'critical',
+      count: stats.critical,
+      label: t('knowledge.escalations.legend.critical'),
+      range: t('knowledge.escalations.legend.criticalRange', ESCALATION_SLA),
+      pill: 'border-[#f4c9c5] bg-[#fff0ed] text-[#d94b3d]',
+      dot: 'bg-[#d94b3d]'
+    },
+    {
+      key: 'warning',
+      count: stats.warning,
+      label: t('knowledge.escalations.legend.warning'),
+      range: t('knowledge.escalations.legend.warningRange', ESCALATION_SLA),
+      pill: 'border-[#e4d3b5] bg-[#fff5df] text-[#a66b08]',
+      dot: 'bg-[#a66b08]'
+    },
+    {
+      key: 'normal',
+      count: stats.onTime,
+      label: t('knowledge.escalations.legend.normal'),
+      range: t('knowledge.escalations.legend.normalRange', ESCALATION_SLA),
+      pill: 'border-[#c1dacc] bg-[#eaf7ef] text-[#2f8456]',
+      dot: 'bg-[#2f8456]'
+    }
   ];
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] px-4 py-4 md:px-8 md:py-6">
-      <header className="mb-5 overflow-hidden rounded-bubble border border-border bg-surface shadow-card">
-        <div className="flex flex-wrap items-start justify-between gap-5 px-[17px] py-4">
-          <div className="min-w-0">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-muted">
-              <i className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-kb-pulse" />
+    <div className="kb-surface mx-auto w-full max-w-[1180px] px-4 py-4 md:px-8 md:py-6">
+      <header className="mb-4 overflow-hidden rounded-[17px] border border-[#dfe3e7] bg-white shadow-[0_8px_30px_-26px_rgba(26,38,54,0.34),0_1px_2px_rgba(22,31,43,0.03)] dark:border-border dark:bg-surface">
+        <div className="flex flex-col gap-4 px-[22px] py-4 lg:flex-row lg:items-center lg:gap-[26px]">
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-[#667068] dark:text-fg-muted">
+              <i className="inline-block h-[7px] w-[7px] rounded-full bg-[#3bbf88] shadow-[0_0_0_3px_#e1f5ec]" />
               {t('knowledge.escalations.kicker')}
             </span>
-            <h1 className="mt-1 text-2xl font-semibold tracking-[-0.02em]">{t('knowledge.escalations.title')}</h1>
-            <p className="mt-1 max-w-[62ch] text-[13.5px] text-fg-muted">{t('knowledge.escalations.subtitle')}</p>
+            <h1 className="mt-1.5 text-[26px] font-bold leading-[1.1] tracking-[-0.028em] text-[#1f2521] dark:text-fg">
+              {t('knowledge.escalations.title')}
+            </h1>
+            <p className="mt-1.5 max-w-[700px] text-[13px] leading-[1.45] text-[#687069] dark:text-fg-muted">
+              {t('knowledge.escalations.subtitle')}
+            </p>
           </div>
 
           {/* Havuzun kişiye atanmadığını gösteren tek yüzey. */}
-          <div className="flex min-w-0 flex-col items-start gap-1.5 sm:items-end">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-muted">
+          <div
+            className="grid w-full shrink-0 grid-cols-[1fr_auto] items-center gap-x-4 gap-y-[5px] rounded-[13px] border border-[#e2e6eb] bg-[#f8fafc] px-[15px] py-3 lg:w-auto lg:min-w-[245px] dark:border-border dark:bg-surface-1"
+            style={{ gridTemplateAreas: '"baslik avatar" "not avatar"' }}
+          >
+            <span
+              className="text-[9.5px] font-bold uppercase tracking-[0.075em] text-[#6e7780] dark:text-fg-muted"
+              style={{ gridArea: 'baslik' }}
+            >
               {t('knowledge.escalations.poolLabel')}
             </span>
-            <div className="flex items-center -space-x-2">
-              {experts.map(expert => (
-                <Tooltip
+            <div
+              className="flex items-center self-center"
+              style={{ gridArea: 'avatar' }}
+            >
+              {experts.map((expert, index) => (
+                <span
+                  className="rounded-full"
                   key={expert.id}
+                  style={{ boxShadow: '0 0 0 3px #f8fafc', marginLeft: index ? -9 : 0 }}
                   title={expert.name}
                 >
-                  <span className="rounded-full ring-2 ring-[var(--mui-palette-background-paper)]">
-                    <UserAvatar
-                      name={expert.name}
-                      size={28}
-                    />
-                  </span>
-                </Tooltip>
+                  <QuestionAvatar
+                    name={expert.name}
+                    size={33}
+                    userId={expert.id}
+                  />
+                </span>
               ))}
             </div>
-            <span className="text-[12px] text-fg-muted">
-              {t('knowledge.escalations.poolNote', { count: experts.length })}
+            <span
+              className="text-[11.5px] text-[#747d76] dark:text-fg-muted"
+              style={{ gridArea: 'not' }}
+            >
+              <b className="font-[650] text-[#2e3530] dark:text-fg">
+                {t('knowledge.escalations.poolCount', { count: experts.length })}
+              </b>{' '}
+              {t('knowledge.escalations.poolSees')}
             </span>
           </div>
         </div>
 
-        <div className="grid gap-3 border-t border-border px-[17px] py-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Metrik şeridi — hairline bölmeli */}
+        <div className="mx-[18px] mb-3 grid grid-cols-2 gap-px overflow-hidden rounded-[12px] bg-[#e5e8ec] lg:grid-cols-4 dark:bg-border">
           <ConsoleMetric
             hint={t('knowledge.escalations.metric.queueHint')}
-            icon={<TrayIcon size={17} />}
+            icon={<TrayIcon size={16} />}
             name={t('knowledge.escalations.metric.queue')}
             tone="info"
-            value={<>{stats.total}</>}
+            value={
+              <>
+                {stats.total}
+                <small className="ml-1 text-[11.5px] font-[550] text-[#989d98]">
+                  {t('knowledge.escalations.metric.queueUnit')}
+                </small>
+              </>
+            }
           />
           <ConsoleMetric
             hint={t('knowledge.escalations.metric.breachHint', ESCALATION_SLA)}
-            icon={<LightningIcon size={17} />}
+            icon={<LightningIcon size={16} />}
             name={t('knowledge.escalations.metric.breach')}
             tone={stats.critical ? 'critical' : 'info'}
             value={
               <>
                 {stats.critical}
-                <small className="ml-1 text-[13px] font-normal text-fg-muted">/ {stats.total}</small>
+                <small className="ml-1 text-[11.5px] font-[550] text-[#989d98]">/ {stats.total}</small>
               </>
             }
           />
           <ConsoleMetric
             hint={t('knowledge.escalations.metric.longestHint')}
-            icon={<ClockIcon size={17} />}
+            icon={<ClockIcon size={16} />}
             name={t('knowledge.escalations.metric.longest')}
             tone="info"
             value={stats.total ? <Duration hours={stats.longestHours} /> : <>—</>}
           />
           <ConsoleMetric
             hint={t('knowledge.escalations.metric.averageHint', ESCALATION_SLA)}
-            icon={<ChartLineUpIcon size={17} />}
+            icon={<ChartLineUpIcon size={16} />}
             name={t('knowledge.escalations.metric.average')}
             tone="info"
             value={stats.total ? <Duration hours={stats.averageHours} /> : <>—</>}
           />
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-border px-[17px] py-3.5">
+        {/* Dağılım şeridi — etiketli segment pill'leri + lejant */}
+        <div className="flex flex-col gap-[22px] border-t border-[#e7eaed] bg-[#fcfcfb] px-[22px] py-2.5 lg:flex-row lg:items-center dark:border-border dark:bg-surface-1">
           <div
             aria-label={t('knowledge.escalations.distribution', {
               critical: stats.critical,
               normal: stats.onTime,
               warning: stats.warning
             })}
-            className="flex h-2 gap-1 overflow-hidden rounded-full"
+            className="flex h-6 max-w-[480px] flex-1 gap-1"
             role="img"
           >
             {stats.total ? (
@@ -348,24 +416,29 @@ export function EscalationsScreen(): React.JSX.Element {
                 .filter(segment => segment.count)
                 .map(segment => (
                   <span
-                    className={`${segment.className} rounded-full`}
-                    key={segment.label}
+                    className={`inline-flex min-w-[42px] items-center justify-center gap-1 overflow-hidden rounded-md border font-[tabular-nums] ${segment.pill}`}
+                    key={segment.key}
                     style={{ flex: segment.count }}
-                  />
+                  >
+                    <b className="text-[11px] font-[760]">{segment.count}</b>
+                    <small className="overflow-hidden text-ellipsis whitespace-nowrap text-[8px] font-[650]">
+                      {segment.label}
+                    </small>
+                  </span>
                 ))
             ) : (
-              <span className="flex-1 rounded-full bg-fg-muted/15" />
+              <span className="flex-1 rounded-md bg-[#eceeeb]" />
             )}
           </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-fg-muted">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {segments.map(segment => (
               <span
-                className="inline-flex items-center gap-1.5"
-                key={segment.label}
+                className="inline-flex items-center gap-[7px] text-[11px] text-[#656d66] dark:text-fg-muted"
+                key={segment.key}
               >
-                <i className={`inline-block h-2 w-2 rounded-full ${segment.className}`} />
-                <b className="font-semibold text-fg">{segment.count}</b>
-                {segment.label}
+                <i className={`inline-block h-[7px] w-[7px] rounded-sm ${segment.dot}`} />
+                <b className="font-bold text-[#2f3630] dark:text-fg">{segment.count}</b>
+                {segment.label} · {segment.range}
               </span>
             ))}
           </div>
@@ -421,28 +494,31 @@ export function EscalationsScreen(): React.JSX.Element {
           </div>
         </section>
       ) : (
-        <section>
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-muted">
+        <section className="overflow-hidden rounded-[15px] border border-[#e1e4e0] bg-white shadow-[0_1px_2px_rgba(18,18,16,0.025)] dark:border-border dark:bg-surface">
+          <header className="flex min-h-[68px] flex-wrap items-center gap-2.5 border-b border-[#eceeeb] bg-[#fafaf9] px-[19px] py-3.5 dark:border-border dark:bg-surface-1">
+            <div className="min-w-0">
+              <span className="block text-[9.5px] font-bold uppercase tracking-[0.09em] text-[#667068] dark:text-fg-muted">
                 {t('knowledge.escalations.queueKicker')}
               </span>
-              <h2 className="text-[17px] font-semibold tracking-[-0.015em]">{t('knowledge.escalations.queueTitle')}</h2>
+              <h2 className="mt-1 text-[15px] font-[650] text-[#303530] dark:text-fg">
+                {t('knowledge.escalations.queueTitle')}
+              </h2>
             </div>
-            <small className="text-[12.5px] text-fg-muted">
+            <small className="ml-auto text-[11px] text-[#929792] dark:text-fg-muted">
               {readOnly ? t('knowledge.escalations.queueHintReadOnly') : t('knowledge.escalations.queueHint')}
             </small>
-          </div>
+          </header>
 
           <div
             aria-label={t('knowledge.escalations.queueTitle')}
-            className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3"
+            className="grid gap-3 bg-[#f7f7f5] p-3 md:grid-cols-2 xl:grid-cols-3 dark:bg-canvas"
             onKeyDown={handleGridKeyDown}
             ref={gridRef}
             role="list"
           >
             {items.map(item => (
               <div
+                className="flex"
                 data-item={item.id}
                 key={item.id}
                 role="listitem"
@@ -489,10 +565,10 @@ export function EscalationsScreen(): React.JSX.Element {
 
 /* ═══ Pano metriği ═══════════════════════════════════════════════════════ */
 
-/** Tam sınıf adları — dinamik kurulan adları Tailwind göremez. */
+/** Tam sınıf adları — dinamik kurulan adları Tailwind göremez (prototip V41). */
 const METRIC_TONES = {
-  info: 'bg-info/15 text-info-strong dark:text-info-light',
-  critical: 'bg-error/15 text-error-strong dark:text-error-light'
+  info: 'bg-[#eaf1fb] text-[#3f6fae]',
+  critical: 'bg-[#fff0ed] text-[#d94b3d]'
 } as const;
 
 function ConsoleMetric({
@@ -509,14 +585,18 @@ function ConsoleMetric({
   tone: keyof typeof METRIC_TONES;
 }): React.JSX.Element {
   return (
-    <div className="flex min-w-0 items-start gap-3 rounded-[13px] border border-border bg-surface-1 p-3">
-      <span className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] ${METRIC_TONES[tone]}`}>
+    <div className="grid grid-cols-[34px_minmax(0,1fr)] items-center gap-2.5 bg-[#f8f9fb] px-3.5 py-2.5 dark:bg-surface-1">
+      <span className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[9px] ${METRIC_TONES[tone]}`}>
         {icon}
       </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="text-[12px] font-semibold text-fg-muted">{name}</span>
-        <span className="mt-0.5 text-[22px] font-semibold leading-tight tracking-[-0.03em]">{value}</span>
-        <small className="mt-0.5 text-[11.5px] leading-snug text-fg-muted">{hint}</small>
+      <span className="min-w-0">
+        <span className="block text-[10px] font-bold uppercase tracking-[0.07em] text-[#737b75] dark:text-fg-muted">
+          {name}
+        </span>
+        <span className="mt-[3px] block text-[21px] font-bold leading-[1.05] tracking-[-0.025em] text-[#252b26] dark:text-fg">
+          {value}
+        </span>
+        <small className="mt-[3px] block text-[10px] leading-snug text-[#8a918b] dark:text-fg-muted">{hint}</small>
       </span>
     </div>
   );

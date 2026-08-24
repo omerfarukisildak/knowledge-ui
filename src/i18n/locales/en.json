@@ -267,12 +267,16 @@
         "longest": "Longest wait",
         "longestHint": "The record at the top of the queue",
         "average": "Average wait",
-        "averageHint": "Target {{targetHours}} hours"
+        "averageHint": "Target {{targetHours}} hours",
+        "queueUnit": "questions"
       },
       "legend": {
         "critical": "critical",
         "warning": "warning",
-        "normal": "on time"
+        "normal": "on time",
+        "criticalRange": "over {{breachHours}}h",
+        "warningRange": "{{targetHours}}–{{breachHours}}h",
+        "normalRange": "under {{targetHours}}h"
       },
       "sla": {
         "critical": "SLA breached",
@@ -331,7 +335,9 @@
         "description": "No escalation is waiting for a specialist answer right now. If a new question cannot be resolved automatically it lands here and the clock starts.",
         "toQuestions": "Go to all questions",
         "toMetrics": "Metrics"
-      }
+      },
+      "poolCount": "{{count}} experts",
+      "poolSees": "see the same queue"
     },
     "reported": {
       "kicker": "Content quality control",

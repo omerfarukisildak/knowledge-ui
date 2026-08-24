@@ -110,7 +110,7 @@ export function ExpertAnswerCard({
   const dislikes = feedback.filter(entry => entry.value === 'red').length;
 
   return (
-    <div className="mt-3 overflow-hidden rounded-[13px] border border-[#e7e7e5] bg-white text-[13.5px] shadow-[0_2px_8px_rgba(11,16,32,0.025)] dark:border-border dark:bg-surface">
+    <div className="overflow-hidden rounded-[13px] border border-[#e7e7e5] bg-white text-[13.5px] shadow-[0_2px_8px_rgba(11,16,32,0.025)] dark:border-border dark:bg-surface">
       {/* Üst — uzman kimliği + tarih */}
       <div className="flex min-h-[62px] flex-wrap items-center justify-between gap-3.5 border-b border-[#eeeeec] bg-[#fbfbfc] px-[15px] py-[11px] dark:border-border dark:bg-surface-1">
         <div className="flex min-w-0 flex-wrap items-center gap-[9px]">

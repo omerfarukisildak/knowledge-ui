@@ -25,7 +25,8 @@ export function formatDate(value?: string | null, locale = 'tr'): string {
 }
 
 export function formatDateTime(value?: string | null, locale = 'tr'): string {
-  return toDate(value)?.locale(locale).format('DD.MM.YYYY HH:mm') ?? '—';
+  // Prototipteki `tarihSaat` ile aynı: "24 Ağustos 2026, 09:05".
+  return toDate(value)?.locale(locale).format('D MMMM YYYY, HH:mm') ?? '—';
 }
 
 /** "3 gün önce" biçimi; liste satırlarında tam tarihten daha okunur. */

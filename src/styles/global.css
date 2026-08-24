@@ -13,6 +13,32 @@
 @import '~@fontsource/plus-jakarta-sans/600.css';
 @import '~@fontsource/plus-jakarta-sans/700.css';
 
+/**
+ * Figtree — Bilgi Bankası prototipinin tipografisi (self-hosted woff2, CDN'e
+ * istek gitmez). Tema fontu buna geçirildiği için tüm ekranlar prototiple aynı
+ * yazı tipini kullanır.
+ */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('/assets/fonts/figtree-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('/assets/fonts/figtree-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -159,4 +185,27 @@ body {
   --kb-tag-7-bg: #402719;
   --kb-tag-7-fg: #eeb28c;
   --kb-tag-7-br: #5d3a26;
+}
+
+/**
+ * Bilgi Bankası soru yüzeyleri — kenarlık düzeltmesi.
+ *
+ * Tailwind preflight bu projede kapalı (`corePlugins.preflight=false`), bu yüzden
+ * `@tailwind base` evrensel `border-style: solid` reset'ini basmıyor. Sonuç:
+ * `<div>`/`<label>` gibi elemanlarda `border-*` sınıfları yalnızca genişlik+renk
+ * verip stil `none` kaldığından KENARLIK GÖRÜNMÜYOR (satır ayraçları, arama kutusu).
+ * `<button>` UA varsayılanıyla göründüğü için sorun yalnızca diğer elemanlarda.
+ *
+ * Aşağıdaki kural yalnızca `.kb-surface` altındaki elemanları etkiler (MUI'ye
+ * dokunmaz) ve Tailwind preflight'ın yaptığını birebir tekrar eder.
+ */
+.kb-surface *,
+.kb-surface *::before,
+.kb-surface *::after {
+  /* border-width: 0 ŞART: aksi hâlde `border-style: solid` her elemanın
+     VARSAYILAN border genişliğini (medium) ortaya çıkarır ve her hücre siyah
+     kutuya döner. Bu iki satır birlikte Tailwind preflight'ın davranışıdır —
+     yalnızca `border-b`/`border` gibi bir utility genişlik verdiğinde çizgi çıkar. */
+  border-width: 0;
+  border-style: solid;
 }

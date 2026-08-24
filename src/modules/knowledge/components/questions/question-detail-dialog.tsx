@@ -9,7 +9,6 @@ import { Lock as LockIcon } from '@phosphor-icons/react/dist/ssr/Lock';
 import { LockOpen as LockOpenIcon } from '@phosphor-icons/react/dist/ssr/LockOpen';
 import { ShieldCheck as ShieldCheckIcon } from '@phosphor-icons/react/dist/ssr/ShieldCheck';
 import { Tag as TagIcon } from '@phosphor-icons/react/dist/ssr/Tag';
-import { X as XIcon } from '@phosphor-icons/react/dist/ssr/X';
 import { useTranslation } from 'react-i18next';
 
 import { PRIVACY_CLASSES } from 'src/modules/knowledge/constants';
@@ -92,7 +91,7 @@ export function QuestionDetailDialog({
   return (
     <div
       aria-modal="true"
-      className="fixed inset-0 z-50 grid place-items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
+      className="kb-surface fixed inset-0 z-50 grid place-items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
       onClick={onClose}
       role="dialog"
     >
@@ -101,22 +100,22 @@ export function QuestionDetailDialog({
         onClick={event => event.stopPropagation()}
       >
         {/* Sabit başlık */}
-        <div className="sticky top-0 z-[5] flex min-h-[64px] items-center justify-between gap-4 border-b border-[#e7e7e5] bg-white/95 px-[22px] py-3.5 backdrop-blur dark:border-border dark:bg-surface/95">
+        <div className="sticky top-0 z-[5] flex items-center justify-between gap-4 border-b border-[#e7e7e5] bg-white/95 px-[22px] py-3 backdrop-blur dark:border-border dark:bg-surface/95">
           <h3 className="text-[16px] font-[650] text-[#171816] dark:text-fg">
             {t('knowledge.questions.detail.title')}
           </h3>
           <button
             aria-label={t('knowledge.questions.detail.title')}
-            className="grid h-9 w-9 place-items-center rounded-full border border-transparent text-[#696b67] transition hover:border-[#e7e7e5] hover:bg-[#f7f7f5] dark:text-fg-muted dark:hover:border-border dark:hover:bg-surface-1"
+            className="grid h-9 w-9 place-items-center rounded-full border border-transparent bg-transparent text-[20px] leading-none text-[#696b67] transition hover:border-[#e7e7e5] hover:bg-[#f7f7f5] focus:outline-none dark:text-fg-muted dark:hover:border-border dark:hover:bg-surface-1"
             onClick={onClose}
             type="button"
           >
-            <XIcon size={18} />
+            ×
           </button>
         </div>
 
         {/* Soru bölümü */}
-        <section className="px-6 pb-6 pt-[22px]">
+        <section className="px-6 pb-6 pt-2">
           <div className="mb-3">
             <h3 className="text-[15px] font-[650] text-[#171816] dark:text-fg">
               {t('knowledge.questions.detail.questionSection')}
@@ -214,7 +213,7 @@ export function QuestionDetailDialog({
         </section>
 
         {/* Cevaplar bölümü */}
-        <section className="border-t border-[#e7e7e5] px-6 pb-6 pt-[22px] dark:border-border">
+        <section className="border-t border-[#e7e7e5] px-6 pb-6 pt-2 dark:border-border">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="text-[15px] font-[650] text-[#171816] dark:text-fg">
               {t('knowledge.questions.detail.answerSection')}
@@ -226,23 +225,25 @@ export function QuestionDetailDialog({
             </span>
           </div>
 
-          {expertAnswers.map(answer => (
-            <ExpertAnswerCard
-              answer={answer}
-              author={answer.answered_by ? (users[answer.answered_by] ?? null) : null}
-              disabled={busy}
-              key={answer.id}
-              onFeedback={value => onFeedback(answer.id, value)}
-              onReport={() => onReport(answer.id)}
-              question={question}
-            />
-          ))}
+          <div className="flex flex-col gap-3">
+            {expertAnswers.map(answer => (
+              <ExpertAnswerCard
+                answer={answer}
+                author={answer.answered_by ? (users[answer.answered_by] ?? null) : null}
+                disabled={busy}
+                key={answer.id}
+                onFeedback={value => onFeedback(answer.id, value)}
+                onReport={() => onReport(answer.id)}
+                question={question}
+              />
+            ))}
 
-          {question.status === 'eskale_edildi' ? (
-            <div className="mt-3 rounded-xl border border-[#cfe0fc] bg-[#e8f2fe] px-4 py-3 text-[14px] text-[#12448f]">
-              {t('knowledge.questions.detail.poolNotice')}
-            </div>
-          ) : null}
+            {question.status === 'eskale_edildi' ? (
+              <div className="rounded-xl border border-[#cfe0fc] bg-[#e8f2fe] px-4 py-3 text-[14px] text-[#12448f]">
+                {t('knowledge.questions.detail.poolNotice')}
+              </div>
+            ) : null}
+          </div>
         </section>
       </div>
     </div>
